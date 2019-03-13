@@ -1,5 +1,5 @@
 # $name$
-$description$
+An API project that uses http4s and doobie
 
 ## Requirements
 
