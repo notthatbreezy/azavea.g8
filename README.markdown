@@ -1,5 +1,7 @@
 A [Giter8][g8] template for creating an API with `doobie` and `http4s`.
 
+To run: `sbt new notthatbreezy/azavea.g8`
+
 Template license
 ----------------
 Written in 2019 by Chris Brown chris@cmbrown.org
