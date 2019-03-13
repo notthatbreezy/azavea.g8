@@ -1,0 +1,87 @@
+version: '2.3'
+services:
+  database:
+    image: quay.io/azavea/postgis:2.3-postgres9.6-slim
+    environment:
+      - POSTGRES_USER=$name;format="norm"$
+      - POSTGRES_PASSWORD=$name;format="norm"$
+      - POSTGRES_DB=$name;format="norm"$
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "$name;format="norm"$"]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  app-backend:
+    image: openjdk:11-jdk
+    command:
+      - "api/run"
+    depends_on:
+      database:
+        condition: service_healthy
+    entrypoint: java
+    command:
+      - "-jar"
+      - "$name;format="norm"$-api-assembly.jar"
+    environment:
+      - AWS_PROFILE
+      - ENVIRONMENT=development
+      - POSTGRES_URL=jdbc:postgresql://database.service.internal/
+      - POSTGRES_NAME=$name;format="norm"$
+      - POSTGRES_USER=$name;format="norm"$
+      - POSTGRES_PASSWORD=$name;format="norm"$
+    links:
+      - database:database.service.internal
+    ports:
+      - "$api_port$:$api_port$"
+    volumes:
+      - ./app-backend/:/opt/$name;format="norm"$/app-backend/
+      - \$HOME/.sbt:/root/.sbt
+      - \$HOME/.coursier:/root/.coursier
+      - ./.bintray:/root/.bintray
+      - \$HOME/.ivy2:/root/.ivy2
+      - \$HOME/.aws:/root/.aws:ro
+    working_dir: /opt/$name;format="norm"$/app-backend/api/target/scala-2.11/
+
+  sbt:
+    image: hseeberger/scala-sbt:11.0.2_2.12.8_1.2.8
+    depends_on:
+      database:
+        condition: service_healthy
+    links:
+      - database:database.service.internal
+    environment:
+      - AWS_PROFILE
+      - POSTGRES_URL=jdbc:postgresql://database.service.internal/
+      - POSTGRES_NAME=$name;format="norm"$
+      - POSTGRES_USER=$name;format="norm"$
+      - POSTGRES_PASSWORD=$name;format="norm"$
+      - COURSIER_CACHE=/root/.coursier
+    volumes:
+      - ./app-backend:/opt/$name;format="norm"$
+      - \$HOME/.sbt:/root/.sbt
+      - \$HOME/.coursier:/root/.coursier
+      - ./.bintray:/root/.bintray
+      - \$HOME/.ivy2:/root/.ivy2
+      - \$HOME/.aws:/root/.aws:ro
+    working_dir: /opt/$name;format="norm"$/
+    entrypoint: sbt
+
+  app-backend-migrations:
+    image: boxfuse/flyway:5.2.4
+    environment:
+      - FLYWAY_DRIVER=org.postgresql.Driver
+      - FLYWAY_URL=jdbc:postgresql://database.service.internal/$name;format="norm"$
+      - FLYWAY_USER=$name;format="norm"$
+      - FLYWAY_PASSWORD=$name;format="norm"$
+      - FLYWAY_LOCATIONS=filesystem:/opt/$name;format="norm"$/database/src/main/resources/db
+      - FLYWAY_SCHEMAS=public
+      - FLYWAY_BASELINE_ON_MIGRATE=true
+    depends_on:
+      database:
+        condition: service_healthy
+    links:
+      - database:database.service.internal
+    volumes:
+      - ./app-backend:/opt/$name;format="norm"$
