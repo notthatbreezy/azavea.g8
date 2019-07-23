@@ -45,7 +45,7 @@ services:
     working_dir: /opt/$name;format="norm"$/app-backend/api/target/scala-2.11/
 
   sbt:
-    image: hseeberger/scala-sbt:11.0.2_2.12.8_1.2.8
+    image: hseeberger/scala-sbt:11.0.3_1.2.8_2.12.8
     depends_on:
       database:
         condition: service_healthy
